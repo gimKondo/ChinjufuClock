@@ -15,6 +15,8 @@ using System.Windows.Shapes;
 
 using System.IO;
 using System.Windows.Threading;
+using Microsoft.Win32;
+using Forms = System.Windows.Forms;
 
 namespace ChinjufuClock
 {
@@ -24,14 +26,15 @@ namespace ChinjufuClock
     public partial class MainWindow : Window
     {
         DispatcherTimer dispatcherTimer_;
-        String soundPath_;
+        String soundDirectory_;
+        String charactorPath_;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            ResetCharactor();
-            
+            soundDirectory_ = Properties.Settings.Default.SoundDirectory;
+
             dispatcherTimer_ = new DispatcherTimer(DispatcherPriority.Normal);
             dispatcherTimer_.Interval = new TimeSpan(0, 0, 1); // 1秒ごとにイベント発生
             dispatcherTimer_.Tick += new EventHandler(dispatcherTimer_Tick);
@@ -48,7 +51,11 @@ namespace ChinjufuClock
                 String fileName = (30 + i).ToString() + ".mp3";
                 if (now == timeStr)
                 {
-                    ResetCharactor();
+                    if (!ResetCharactor())
+                    {
+                        MessageBox.Show("適切なパスが設定されていません");
+                        return;
+                    }
                     PlayVoice(fileName);
                     return;
                 }
@@ -64,11 +71,35 @@ namespace ChinjufuClock
                 String fileName = (30 + i).ToString() + ".mp3";
                 if (nowHour == i)
                 {
-                    ResetCharactor();
+                    if (!ResetCharactor())
+                    {
+                        MessageBox.Show("適切なパスが設定されていません");
+                        return;
+                    }
                     PlayVoice(fileName);
                     return;
                 }
             }
+        }
+
+        private void btnSetting_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new Forms.FolderBrowserDialog())
+            {
+                if (soundDirectory_.Length != 0)
+                {
+                    dlg.SelectedPath = soundDirectory_;
+                }
+                if (Forms.DialogResult.OK == dlg.ShowDialog())
+                {
+                    soundDirectory_ = dlg.SelectedPath;
+                    Properties.Settings.Default.SoundDirectory = soundDirectory_;
+                    Properties.Settings.Default.Save();
+                }
+                
+            }
+            
+
         }
 
         /// <summary>指定のファイルのボイスを鳴らす</summary>
@@ -77,18 +108,30 @@ namespace ChinjufuClock
         {
             MediaPlayer player = new MediaPlayer();
             player.Volume = 0.3;
-            player.Open(new Uri(soundPath_ + fileName, UriKind.Absolute));
+            player.Open(new Uri(charactorPath_ + fileName, UriKind.Absolute));
             player.Play();
             //player.Close();
         }
 
-        private void ResetCharactor()
+        /// <summary>時報担当キャラクタの変更</summary>
+        /// <returns></returns>
+        private bool ResetCharactor()
         {
-            var dirs = Directory.GetDirectories(@"F:\voice\kancolle\");
-            Random rnd = new Random(Environment.TickCount);
-            var trgDir = dirs[rnd.Next(0, dirs.Length)];
-            soundPath_ = trgDir + @"\";
-            txtCharactor.Text = System.IO.Path.GetFileName(trgDir);
+            try
+            {
+                var dirs = Directory.GetDirectories(soundDirectory_);
+                Random rnd = new Random(Environment.TickCount);
+                var trgDir = dirs[rnd.Next(0, dirs.Length)];
+                charactorPath_ = trgDir + @"\";
+                txtCharactor.Text = System.IO.Path.GetFileName(trgDir);
+            }
+            catch(Exception)
+            {
+                return false;
+            }
+            
+            return true;
         }
+
     }
 }

@@ -6,6 +6,7 @@
             <TextBlock Name="txtTime" FontSize="32" HorizontalAlignment="Center" Text="00:00:00" />
             <TextBlock Name="txtCharactor" FontSize="32" Text="test" />
             <Button Name="btnTest" Content="テスト" HorizontalAlignment="Center" Width="75" Click="Button_Click"/>
+            <Button Name="btnSetting" Content="設定" HorizontalAlignment="Center" Width="75" Click="btnSetting_Click"/>
     </StackPanel>
 
 </Window>
